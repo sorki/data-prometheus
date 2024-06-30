@@ -1,17 +1,18 @@
+cabal-version:       2.2
 name:                data-prometheus
 version:             0.1.0.0
 synopsis:            Prometheus metrics data types and parser
 description:         Prometheus metrics data types and parser
-homepage:            https://github.com/vpsfreecz/data-prometheus
-license:             BSD3
+homepage:            https://github.com/sorki/data-prometheus
+license:             BSD-3-Clause
 license-file:        LICENSE
-author:              Richard Marko
+author:              Sorki
 maintainer:          srk@48.io
-copyright:           2018 Richard Marko
+copyright:           2024 Sorki
 category:            Parsing
 build-type:          Simple
--- extra-source-files:
-cabal-version:       >=1.10
+extra-source-files:
+  README.md
 
 library
   hs-source-dirs:      src
@@ -66,4 +67,4 @@ test-suite data-prometheus-tests
 
 source-repository head
   type:     git
-  location: https://github.com/vpsfreecz/data-prometheus
+  location: https://github.com/sorki/data-prometheus
