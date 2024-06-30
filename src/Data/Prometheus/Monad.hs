@@ -71,7 +71,7 @@ eitherToGauge = Gauge . fromIntegral . eitherExitCode
 -- | Convert Bool to Gauge, 0 meaning True
 goodWhen :: Bool -> Metric
 goodWhen True = Gauge 0
-goodWhen False = Gauge 0
+goodWhen False = Gauge 1
 
 -- | Convert Enum to Gauge, 0 meaning Ok status
 enumToGauge :: Enum a => a -> Metric
