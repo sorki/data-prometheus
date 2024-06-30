@@ -1,34 +1,52 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Data.Prometheus.Monad where
 
-import qualified Data.Map.Strict       as M
-import qualified Data.ByteString.Char8 as B
 import Control.Monad.Trans.State.Strict
+import Data.ByteString (ByteString)
+import Data.Map (Map)
+import qualified Data.Map
+import qualified Data.ByteString.Char8
 
 import Data.Prometheus.Types
 import Data.Prometheus.Pretty
 
 data MetricState = MetricState
-  { metrics :: PromMetrics
-  , errors  :: [B.ByteString]
+  { metrics :: Map MetricId Metric
+  , errors  :: [ByteString]
   }
 
 type MetricsT m = StateT MetricState m ()
 
 -- | Evaluate metrics into `MetricState`
-execMetrics :: Monad m => MetricsT m -> m MetricState
-execMetrics = flip execStateT (MetricState M.empty [])
+execMetrics
+  :: Monad m
+  => MetricsT m
+  -> m MetricState
+execMetrics = flip execStateT (MetricState mempty mempty)
 
 -- | Evaluate metrics and return pretty-printed output
 -- as expected by textfile collector
-runMetrics :: Monad m => MetricsT m -> m B.ByteString
+runMetrics
+  :: Monad m
+  => MetricsT m
+  -> m ByteString
 runMetrics x = do
   ms <- execMetrics x
-  return $ B.concat [ prettyMetrics (metrics ms),  B.unlines (errors ms) ]
+  pure
+    $ mconcat
+        [ prettyMetrics (metrics ms)
+        , Data.ByteString.Char8.unlines (errors ms)
+        ]
 
 -- | Add metric with value
-addMetric :: Monad m => MetricId -> Metric -> MetricsT m
-addMetric mId mData = modify $ \ms -> ms { metrics = M.insert mId mData (metrics ms) }
+addMetric
+  :: Monad m
+  => MetricId
+  -> Metric
+  -> MetricsT m
+addMetric mId mData =
+  modify $ \ms ->
+    ms { metrics = Data.Map.insert mId mData (metrics ms) }
 
 -- | Log error message
 --
@@ -36,28 +54,49 @@ addMetric mId mData = modify $ \ms -> ms { metrics = M.insert mId mData (metrics
 --
 -- Not a standard token but textfile collector ignores it as a comment
 -- and we can use it to provide some insight to our scripts.
-logError :: Monad m => B.ByteString -> StateT MetricState m ()
-logError err = modify $ \ms -> ms { errors = (errors ms) ++ [errComment] }
-  where errComment = B.unwords [ "# ERROR", err ]
+logError
+  :: Monad m
+  => ByteString
+  -> StateT MetricState m ()
+logError err =
+  modify $ \ms -> ms { errors = (errors ms) ++ [errComment] }
+  where
+    errComment =
+      Data.ByteString.Char8.unwords
+      [ "# ERROR"
+      , err
+      ]
 
 -- | Create metric with just `name`
-metric :: B.ByteString -> MetricId
-metric mName = MetricId mName B.empty M.empty
+metric
+  :: ByteString
+  -> MetricId
+metric mName = MetricId mName mempty mempty
 
--- | Append `subName` to name of the MetricId
+-- | Append `subName` to the name of a @MetricId@
 --
 -- > metric "a" & sub "b"
 -- results in name "a_b"
-sub :: B.ByteString -> MetricId -> MetricId
+sub
+  :: ByteString
+  -> MetricId
+  -> MetricId
 sub subName m = m { name = (name m) <> "_" <> subName }
 
--- | Set help text / description of MetricId
-desc :: B.ByteString -> MetricId -> MetricId
+-- | Set help text / description of a @MetricId@
+desc
+  :: ByteString
+  -> MetricId
+  -> MetricId
 desc h m = m { help = h }
 
 -- | Add label to MetricId
-label :: B.ByteString -> B.ByteString -> MetricId -> MetricId
-label k v m = m { labels = M.insert k v (labels m) }
+label
+  :: ByteString
+  -> ByteString
+  -> MetricId
+  -> MetricId
+label k v m = m { labels = Data.Map.insert k v (labels m) }
 
 -- | Right is exitcode 0, Left non-zero
 eitherExitCode :: Either a b -> Integer
@@ -73,6 +112,6 @@ goodWhen :: Bool -> Metric
 goodWhen True = Gauge 0
 goodWhen False = Gauge 1
 
--- | Convert Enum to Gauge, 0 meaning Ok status
+-- | Convert Enum to Gauge, 0 (typically) meaning Ok status
 enumToGauge :: Enum a => a -> Metric
 enumToGauge = Gauge . fromIntegral . fromEnum

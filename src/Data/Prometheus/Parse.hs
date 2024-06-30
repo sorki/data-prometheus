@@ -4,13 +4,15 @@ module Data.Prometheus.Parse where
 import Control.Applicative
 
 import Prelude hiding (takeWhile)
-import qualified Data.Map as M
-import Data.ByteString (ByteString)
 import Data.Attoparsec.ByteString.Char8
+import Data.ByteString (ByteString)
+import Data.Map (Map)
+import qualified Data.Map
+
 import Data.Prometheus.Types
 
-parseMetrics :: Parser PromMetrics
-parseMetrics = M.fromList . concat <$>
+parseMetrics :: Parser (Map MetricId Metric)
+parseMetrics = Data.Map.fromList . concat <$>
   many1 parseMetric <* many parseError <* endOfInput
 
 parseMetric :: Parser [(MetricId, Metric)]
@@ -47,18 +49,18 @@ parseMeta = do
     word :: Parser ByteString
     word  = takeWhile1 (\x -> x /=' ' && x /= '\n')
 
-parseGauges :: Parser [(Labels, Metric)]
+parseGauges :: Parser [(Map ByteString ByteString, Metric)]
 parseGauges = many1 (labelsValue (Gauge <$> double))
 
-parseCounters :: Parser [(Labels, Metric)]
+parseCounters :: Parser [(Map ByteString ByteString, Metric)]
 parseCounters = many1 (labelsValue (Counter <$> double))
 
-parseSummary :: Parser [(Labels, Metric)]
+parseSummary :: Parser [(Map ByteString ByteString, Metric)]
 parseSummary = do
-  qs <- M.fromList <$> parseQuantiles `sepBy` endOfLine <?> "quantiles"
+  qs <- Data.Map.fromList <$> parseQuantiles `sepBy` endOfLine <?> "quantiles"
   (_, sum) <- labelsValue double
   (_, cnt) <- labelsValue double
-  return $ [(M.empty, Summary qs sum cnt)]
+  return $ [(mempty, Summary qs sum cnt)]
 
 parseQuantiles :: Parser (Double, Double)
 parseQuantiles = do
@@ -68,12 +70,12 @@ parseQuantiles = do
   val <- double
   return (q, val)
 
-parseHistogram :: Parser [(Labels, Metric)]
+parseHistogram :: Parser [(Map ByteString ByteString, Metric)]
 parseHistogram = do
-  qs <- M.fromList <$> parseHistBuckets `sepBy` endOfLine <?> "quantiles"
+  qs <- Data.Map.fromList <$> parseHistBuckets `sepBy` endOfLine <?> "quantiles"
   (_, sum) <- labelsValue double
   (_, cnt) <- labelsValue double
-  return $ [(M.empty, Histogram qs sum cnt)]
+  return $ [(mempty, Histogram qs sum cnt)]
 
 parseHistBuckets :: Parser (Double, Double)
 parseHistBuckets = do
@@ -83,17 +85,17 @@ parseHistBuckets = do
   val <- double
   return (q, val)
 
-labelsValue :: Parser b -> Parser (Labels, b)
+labelsValue :: Parser b -> Parser (Map ByteString ByteString, b)
 labelsValue f = do
   takeWhile1 (\x -> x /= '{' && x /= ' ')
-  ls <- option M.empty (char '{' *> parseLabels <* char '}')
+  ls <- option mempty (char '{' *> parseLabels <* char '}')
   space
   val <- f
   endOfLine
   return (ls, val)
 
-parseLabels :: Parser Labels
-parseLabels = M.fromList <$> parseLabel `sepBy1` (char ',')
+parseLabels :: Parser (Map ByteString ByteString)
+parseLabels = Data.Map.fromList <$> parseLabel `sepBy1` (char ',')
 
 parseLabel :: Parser (ByteString, ByteString)
 parseLabel = do

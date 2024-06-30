@@ -1,15 +1,12 @@
 module Data.Prometheus.Types where
 
-import Data.Map (Map)
 import Data.ByteString (ByteString)
-
-type Labels = Map ByteString ByteString
-type PromMetrics = Map MetricId Metric
+import Data.Map (Map)
 
 data MetricId = MetricId
   { name   :: ByteString
   , help   :: ByteString
-  , labels :: Labels }
+  , labels :: Map ByteString ByteString }
   deriving (Eq, Ord, Show)
 
 data Metric
