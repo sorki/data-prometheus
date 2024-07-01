@@ -1,5 +1,6 @@
 module Data.Prometheus
   ( parseProm
+  , runMetrics
   , filterMetrics
   , findMetrics
   , hasLabel
@@ -27,6 +28,20 @@ parseProm
   :: ByteString
   -> Either String (Map MetricId Metric)
 parseProm = parseOnly parseMetrics
+
+-- | Evaluate metrics and return pretty-printed output
+-- as expected by textfile collector
+runMetrics
+  :: Monad m
+  => MetricsT m
+  -> m ByteString
+runMetrics x = do
+  ms <- execMetrics x
+  pure
+    $ mconcat
+        [ prettyMetrics (metrics ms)
+        , Data.ByteString.Char8.unlines (errors ms)
+        ]
 
 -- | Filter metrics where name is prefixed by `pattern`
 filterMetrics :: ByteString -> Map MetricId a -> Map MetricId a
@@ -65,4 +80,3 @@ byLabel' label' op =
         Nothing -> False
         Just lc -> op lc
 
--- byLabels

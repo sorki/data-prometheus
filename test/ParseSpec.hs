@@ -7,7 +7,7 @@ module ParseSpec where
 import SpecHelper
 import Text.RawString.QQ
 import Data.Attoparsec.ByteString.Char8
-import qualified Data.Map as M
+import qualified Data.Map
 
 gauge = [r|# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
 # TYPE go_memstats_alloc_bytes gauge
@@ -49,27 +49,107 @@ node_context_switches_total 1.54296968e+08
 
 testCases = [
    ("", Left "not enough input")
- , (gauge, Right $ M.fromList [(MetricId {name = "go_memstats_alloc_bytes", help = "Number of bytes allocated and still in use.", labels = M.empty}
-                  ,Gauge 1276272.0)])
+ , ( gauge
+   , Right
+      $ Data.Map.fromList
+          [ ( MetricId
+                { metricIdName = "go_memstats_alloc_bytes"
+                , metricIdHelp = "Number of bytes allocated and still in use."
+                , metricIdLabels = mempty
+                }
+            , Gauge 1276272.0
+            )
+          ]
+   )
 
- , (summary, Right  $ M.fromList [(MetricId {name = "go_gc_duration_seconds", help = "A summary of the GC invocation durations.", labels = M.empty},
-                     Summary {sumQuantiles = M.fromList [(0.0,8.1545e-5),(0.25,1.03978e-4),(0.5,1.18208e-4),(0.75,1.40686e-4),(1.0,3.02995e-4)], sumSum = 6.560726e-3, sumCount = 51.0})])
-
- , (counter, Right  $ M.fromList [(MetricId {name = "node_context_switches_total", help = "Total number of context switches.", labels = M.empty}
-                    ,Counter 1.54296968e8)])
-
- , (countersLabels, Right $ M.fromList
-      [(MetricId {name = "node_cpu_core_throttles_total", help = "helptext", labels = M.fromList [("core","0"),("package","0")]}
-                 , Counter 0.0)
-      ,(MetricId {name = "node_cpu_core_throttles_total", help = "helptext", labels = M.fromList [("core","1"),("package","0")]}
-               ,Counter 0.0)])
- , (multiple, Right  $ M.fromList
-      [(MetricId {name = "node_arp_entries", help = "ARP entries by device", labels = M.fromList [("device","eth0")]}
-       , Gauge 2.0)
-      ,(MetricId {name = "node_boot_time_seconds", help = "Node boot time, in unixtime.", labels = M.fromList []}
-       , Gauge 1.537903224e9)
-      ,(MetricId {name = "node_context_switches_total", help = "Total number of context switches.", labels = M.fromList []}
-       , Counter 1.54296968e8)])
+ , ( summary
+   , Right
+      $ Data.Map.fromList
+          [ ( MetricId
+                { metricIdName = "go_gc_duration_seconds"
+                , metricIdHelp = "A summary of the GC invocation durations."
+                , metricIdLabels = mempty
+                }
+             , Summary
+                 { sumQuantiles =
+                    Data.Map.fromList
+                      [ (0.0, 8.1545e-5)
+                      , (0.25, 1.03978e-4)
+                      , (0.5, 1.18208e-4)
+                      , (0.75, 1.40686e-4)
+                      , (1.0,3.02995e-4)
+                      ]
+                  , sumSum = 6.560726e-3
+                  , sumCount = 51.0
+                  }
+              )
+          ]
+   )
+ , ( counter
+   , Right
+      $ Data.Map.fromList
+          [ ( MetricId
+                { metricIdName = "node_context_switches_total"
+                , metricIdHelp = "Total number of context switches."
+                , metricIdLabels = mempty
+                }
+             , Counter 1.54296968e8
+             )
+          ]
+   )
+ , ( countersLabels
+   , Right
+      $ Data.Map.fromList
+          [ ( MetricId
+                { metricIdName = "node_cpu_core_throttles_total"
+                , metricIdHelp = "helptext"
+                , metricIdLabels =
+                    Data.Map.fromList
+                      [ ("core", "0")
+                      , ("package","0")
+                      ]
+                }
+                , Counter 0.0
+            )
+          , ( MetricId
+                { metricIdName = "node_cpu_core_throttles_total"
+                , metricIdHelp = "helptext"
+                , metricIdLabels =
+                    Data.Map.fromList
+                      [ ("core", "1")
+                      , ("package", "0")
+                      ]
+                }
+                , Counter 0.0
+            )
+          ]
+   )
+ , ( multiple
+   , Right
+      $ Data.Map.fromList
+          [ (MetricId
+               { metricIdName = "node_arp_entries"
+               , metricIdHelp = "ARP entries by device"
+               , metricIdLabels = Data.Map.fromList [ ("device", "eth0")]
+               }
+            , Gauge 2.0
+            )
+          , ( MetricId
+                { metricIdName = "node_boot_time_seconds"
+                , metricIdHelp = "Node boot time, in unixtime."
+                , metricIdLabels = mempty
+                }
+            , Gauge 1.537903224e9
+            )
+          , ( MetricId
+                { metricIdName = "node_context_switches_total"
+                , metricIdHelp = "Total number of context switches."
+                , metricIdLabels = mempty
+                }
+            , Counter 1.54296968e8
+            )
+          ]
+   )
  ]
 
 spec :: Spec

@@ -3,6 +3,8 @@
 module Data.Prometheus.Pretty
   ( prettyMetrics
   , prettyMetric
+  , prettyMetricShort
+  , prettyId
   ) where
 
 import Data.ByteString (ByteString)
@@ -12,6 +14,7 @@ import qualified Data.ByteString.Char8
 import qualified Data.Map
 
 import Data.Prometheus.Types
+import Data.Prometheus.Monad
 
 prettyMetrics :: Map MetricId Metric -> ByteString
 prettyMetrics =
@@ -23,6 +26,8 @@ prettyMetrics =
       mempty
   where
     -- render help and metric type just once
+    -- for consecutive metridId names
+    -- (with only difference in labels)
     helpTypeOnce prevName mid@MetricId{..} x | prevName /= metricIdName =
       (metricIdName, prettyMetric mid x)
     helpTypeOnce _prevName mid@MetricId{..} x | otherwise =
@@ -41,10 +46,46 @@ prettyMetricShort
   -> Metric
   -> ByteString
 prettyMetricShort mId mData =
-  Data.ByteString.Char8.unwords
-    [ prettyId mId
-    , prettyData mData
-    ]
+  case mData of
+    Counter x -> simple mId x
+    Gauge x -> simple mId x
+    Summary{..} ->
+      Data.ByteString.Char8.unlines
+      $ [ simple
+            (label
+              "quantile"
+              (Data.ByteString.Char8.pack $ show k)
+              mId
+            )
+            v
+        | (k, v) <- Data.Map.toList sumQuantiles
+        ]
+        ++
+        [ simple (sub "sum" mId) sumSum
+        , simple (sub "count" mId) sumCount
+        ]
+    Histogram{..} ->
+      Data.ByteString.Char8.unlines
+      $ [ simple
+            (label
+              "le"
+              (Data.ByteString.Char8.pack $ show k)
+              (sub "bucket" mId)
+            )
+            v
+        | (k, v) <- Data.Map.toList histBuckets
+        ]
+        ++
+        [ simple (sub "sum" mId) histSum
+        , simple (sub "count" mId) histCount
+        ]
+
+  where
+    simple i val =
+      Data.ByteString.Char8.unwords
+        [ prettyId i
+        , Data.ByteString.Char8.pack $ show val
+        ]
 
 prettyHelp
   :: MetricId
@@ -73,13 +114,8 @@ toTypeStr
   -> p
 toTypeStr (Counter _)   = "counter"
 toTypeStr (Gauge _)     = "gauge"
-toTypeStr (Summary _ _ _)   = "summary"
-toTypeStr (Histogram _ _ _) = "histogram"
-
-prettyData :: Metric -> ByteString
-prettyData (Counter c) = Data.ByteString.Char8.pack $ show c
-prettyData (Gauge g) = Data.ByteString.Char8.pack $ show g
-prettyData _ = error "Unable to print summary or histogram"
+toTypeStr (Summary{})   = "summary"
+toTypeStr (Histogram{}) = "histogram"
 
 prettyId
   :: MetricId

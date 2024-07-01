@@ -3,10 +3,10 @@
 module PrettySpec where
 
 import SpecHelper
-import qualified Data.Map as M
+import qualified Data.Map
 
-sIdSimple = MetricId "name" "help" M.empty
-sIdLabels = MetricId "name" "help" (M.fromList [("a", "b")])
+sIdSimple = MetricId "name" "help" mempty
+sIdLabels = MetricId "name" "help" (Data.Map.fromList [("a", "b")])
 sC  = Counter 666
 sG  = Gauge 123.456
 
@@ -18,17 +18,11 @@ spec = do
   it "pretty prints simple ID" $ do
     prettyId sIdSimple `shouldBe` "name"
 
-  it "pretty prints conter" $ do
-    prettyData sC `shouldBe` "666.0"
-
-  it "pretty prints gauge" $ do
-    prettyData sG `shouldBe` "123.456"
-
   it "pretty prints full metric with help and type" $ do
     prettyMetric sIdLabels sC `shouldBe` "# HELP name help\n# TYPE name counter\nname{a=\"b\"} 666.0\n"
 
   it "pretty prints metric" $ do
-    prettyMetricShort sIdLabels sC `shouldBe` "name{a=\"b\"} 666.0"
+    prettyMetricShort sIdLabels sG `shouldBe` "name{a=\"b\"} 123.456"
 
 main :: IO ()
 main = do

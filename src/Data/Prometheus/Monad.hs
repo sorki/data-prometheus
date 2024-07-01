@@ -4,7 +4,6 @@ module Data.Prometheus.Monad
   , MetricsT
   , ToMetrics(..)
   , execMetrics
-  , runMetrics
   , addMetric
   , metric
   , sub
@@ -24,7 +23,6 @@ import qualified Data.Map
 import qualified Data.ByteString.Char8
 
 import Data.Prometheus.Types
-import Data.Prometheus.Pretty
 
 data MetricState = MetricState
   { metrics :: Map MetricId Metric
@@ -50,20 +48,6 @@ execMetrics
   => MetricsT m
   -> m MetricState
 execMetrics = flip execStateT (MetricState mempty mempty)
-
--- | Evaluate metrics and return pretty-printed output
--- as expected by textfile collector
-runMetrics
-  :: Monad m
-  => MetricsT m
-  -> m ByteString
-runMetrics x = do
-  ms <- execMetrics x
-  pure
-    $ mconcat
-        [ prettyMetrics (metrics ms)
-        , Data.ByteString.Char8.unlines (errors ms)
-        ]
 
 -- | Add metric with value
 addMetric
