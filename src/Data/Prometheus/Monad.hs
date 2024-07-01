@@ -17,6 +17,17 @@ data MetricState = MetricState
 
 type MetricsT m = StateT MetricState m ()
 
+class ToMetrics a where
+  toMetrics
+    :: Monad m
+    => MetricId
+    -> a
+    -> MetricsT m
+
+instance ToMetrics a => ToMetrics [a] where
+  toMetrics baseMetricId =
+    mapM_ $ toMetrics baseMetricId
+
 -- | Evaluate metrics into `MetricState`
 execMetrics
   :: Monad m
