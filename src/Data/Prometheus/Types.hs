@@ -4,9 +4,9 @@ import Data.ByteString (ByteString)
 import Data.Map (Map)
 
 data MetricId = MetricId
-  { name   :: ByteString
-  , help   :: ByteString
-  , labels :: Map ByteString ByteString }
+  { metricIdName :: ByteString
+  , metricIdHelp :: ByteString
+  , metricIdLabels :: Map ByteString ByteString }
   deriving (Eq, Ord, Show)
 
 data Metric

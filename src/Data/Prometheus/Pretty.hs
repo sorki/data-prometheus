@@ -20,10 +20,10 @@ prettyMetrics =
       mempty
   where
     -- render help and metric type just once
-    helpTypeOnce prevName mid@MetricId{..} x | prevName /= name =
-      (name, prettyMetric mid x)
-    helpTypeOnce prevName mid@MetricId{..} x | otherwise        =
-      (name, prettyMetricShort mid x <> "\n")
+    helpTypeOnce prevName mid@MetricId{..} x | prevName /= metricIdName =
+      (metricIdName, prettyMetric mid x)
+    helpTypeOnce _prevName mid@MetricId{..} x | otherwise =
+      (metricIdName, prettyMetricShort mid x <> "\n")
 
 prettyMetric :: MetricId -> Metric -> ByteString
 prettyMetric mId mData =
@@ -49,8 +49,8 @@ prettyHelp
 prettyHelp MetricId{..} =
   Data.ByteString.Char8.unwords
     [ "# HELP"
-    , name
-    , help
+    , metricIdName
+    , metricIdHelp
     ]
 
 prettyType
@@ -60,7 +60,7 @@ prettyType
 prettyType mId x =
   Data.ByteString.Char8.unwords
   [ "# TYPE"
-  , name mId
+  , metricIdName mId
   , toTypeStr x
   ]
 
@@ -83,20 +83,21 @@ prettyId
   -> ByteString
 prettyId MetricId{..} =
   mconcat
-    [ name
-    , prettyLabels labels
+    [ metricIdName
+    , prettyLabels metricIdLabels
     ]
 
 prettyLabels
   :: Map ByteString ByteString
   -> ByteString
 prettyLabels labels | Data.Map.null labels = mempty
-prettyLabels labels                 =
+prettyLabels labels | otherwise =
   mconcat
     [ "{"
     , Data.ByteString.Char8.intercalate ","
         $ Data.Map.elems
         $ Data.Map.mapWithKey
-            (\k v -> mconcat [k, "=\"", v, "\""]) labels
+            (\k v -> mconcat [k, "=\"", v, "\""]) 
+            labels
     , "}"
     ]

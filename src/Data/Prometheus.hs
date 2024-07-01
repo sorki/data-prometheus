@@ -29,17 +29,17 @@ parseProm = parseOnly parseMetrics
 filterMetrics :: ByteString -> Map MetricId a -> Map MetricId a
 filterMetrics pattern =
   Data.Map.filterWithKey
-    (\k _ -> pattern `Data.ByteString.Char8.isPrefixOf` (name k))
+    (\k _ -> pattern `Data.ByteString.Char8.isPrefixOf` (metricIdName k))
 
 -- | Find metrics where name is equal to `pattern`
 findMetrics :: ByteString -> Map MetricId a -> Map MetricId a
 findMetrics pattern =
-  Data.Map.filterWithKey (\k _ -> pattern == name k)
+  Data.Map.filterWithKey (\k _ -> pattern == metricIdName k)
 
 -- | Find metrics by `label`
 hasLabel :: ByteString -> Map MetricId a -> Map MetricId a
 hasLabel label' =
-  Data.Map.filterWithKey (\k _ -> Data.Map.member label' (labels k))
+  Data.Map.filterWithKey (\k _ -> Data.Map.member label' (metricIdLabels k))
 
 -- | Find metrics with `label` which matches `contents`
 byLabel
@@ -47,12 +47,7 @@ byLabel
   -> ByteString
   -> Map MetricId a
   -> Map MetricId a
-byLabel label' contents =
-  Data.Map.filterWithKey
-    $ \k _ ->
-      case Data.Map.lookup label' (labels k) of
-        Nothing -> False
-        Just lc -> lc == contents
+byLabel label' contents = byLabel' label' (==contents)
 
 -- | Find metrics with `label` which content satisfies `op` predicate
 byLabel'
@@ -63,7 +58,7 @@ byLabel'
 byLabel' label' op =
   Data.Map.filterWithKey
     $ \k _ ->
-      case Data.Map.lookup label' (labels k) of
+      case Data.Map.lookup label' (metricIdLabels k) of
         Nothing -> False
         Just lc -> op lc
 

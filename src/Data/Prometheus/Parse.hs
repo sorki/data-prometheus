@@ -31,14 +31,14 @@ parseMetric = do
 -- name, help, textual type
 parseMeta :: Parser (ByteString, ByteString, ByteString)
 parseMeta = do
-  "# HELP "
+  _ <- "# HELP "
   name <- word
-  space
+  _ <- space
   help <- eol
   endOfLine
-  "# TYPE "
-  word
-  space
+  _ <- "# TYPE "
+  _ <- word -- repeated name
+  _ <- space
   typ <- word
   endOfLine
   return (name, help, typ)
@@ -58,38 +58,38 @@ parseCounters = many1 (labelsValue (Counter <$> double))
 parseSummary :: Parser [(Map ByteString ByteString, Metric)]
 parseSummary = do
   qs <- Data.Map.fromList <$> parseQuantiles `sepBy` endOfLine <?> "quantiles"
-  (_, sum) <- labelsValue double
-  (_, cnt) <- labelsValue double
-  return $ [(mempty, Summary qs sum cnt)]
+  (_, lsum) <- labelsValue double
+  (_, lcnt) <- labelsValue double
+  return $ [(mempty, Summary qs lsum lcnt)]
 
 parseQuantiles :: Parser (Double, Double)
 parseQuantiles = do
-  takeWhile1 (\x -> x /= '{' && x /= ' ')
+  _ <- takeWhile1 (\x -> x /= '{' && x /= ' ')
   q <- "{quantile=\"" *> double <* "\"}"
-  space
+  _ <- space
   val <- double
   return (q, val)
 
 parseHistogram :: Parser [(Map ByteString ByteString, Metric)]
 parseHistogram = do
   qs <- Data.Map.fromList <$> parseHistBuckets `sepBy` endOfLine <?> "quantiles"
-  (_, sum) <- labelsValue double
-  (_, cnt) <- labelsValue double
-  return $ [(mempty, Histogram qs sum cnt)]
+  (_, lsum) <- labelsValue double
+  (_, lcnt) <- labelsValue double
+  return $ [(mempty, Histogram qs lsum lcnt)]
 
 parseHistBuckets :: Parser (Double, Double)
 parseHistBuckets = do
-  takeWhile1 (\x -> x /= '{' && x /= ' ')
+  _ <- takeWhile1 (\x -> x /= '{' && x /= ' ')
   q <- "{le=\"" *> double <* "\"}"
-  space
+  _ <- space
   val <- double
   return (q, val)
 
 labelsValue :: Parser b -> Parser (Map ByteString ByteString, b)
 labelsValue f = do
-  takeWhile1 (\x -> x /= '{' && x /= ' ')
+  _ <- takeWhile1 (\x -> x /= '{' && x /= ' ')
   ls <- option mempty (char '{' *> parseLabels <* char '}')
-  space
+  _ <- space
   val <- f
   endOfLine
   return (ls, val)
@@ -100,13 +100,13 @@ parseLabels = Data.Map.fromList <$> parseLabel `sepBy1` (char ',')
 parseLabel :: Parser (ByteString, ByteString)
 parseLabel = do
   l <- takeWhile (/= '=')
-  char '='
+  _ <- char '='
   v <- char '"' *> takeWhile (\x -> x /= '"') <* char '"'
   return (l, v)
 
 parseError :: Parser ByteString
 parseError = do
-  "# ERROR "
+  _ <- "# ERROR "
   err <- eol
   endOfLine
   return err

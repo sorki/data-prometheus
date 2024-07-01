@@ -92,14 +92,16 @@ sub
   :: ByteString
   -> MetricId
   -> MetricId
-sub subName m = m { name = (name m) <> "_" <> subName }
+sub subName m =
+  m { metricIdName = metricIdName m <> "_" <> subName }
 
 -- | Set help text / description of a @MetricId@
 desc
   :: ByteString
   -> MetricId
   -> MetricId
-desc h m = m { help = h }
+desc h m =
+  m { metricIdHelp = h }
 
 -- | Add label to MetricId
 label
@@ -107,7 +109,8 @@ label
   -> ByteString
   -> MetricId
   -> MetricId
-label k v m = m { labels = Data.Map.insert k v (labels m) }
+label k v m =
+  m { metricIdLabels = Data.Map.insert k v (metricIdLabels m) }
 
 -- | Right is exitcode 0, Left non-zero
 eitherExitCode :: Either a b -> Integer
