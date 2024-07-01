@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-module Data.Prometheus.Pretty where
+module Data.Prometheus.Pretty
+  ( prettyMetrics
+  , prettyMetric
+  ) where
 
 import Data.ByteString (ByteString)
 import Data.Map (Map)

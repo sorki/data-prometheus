@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Data.Prometheus.Parse where
+module Data.Prometheus.Parse
+  ( parseMetrics
+  ) where
 
 import Control.Applicative
 

@@ -1,5 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Data.Prometheus.Monad where
+module Data.Prometheus.Monad
+  ( MetricState(..)
+  , MetricsT
+  , ToMetrics(..)
+  , execMetrics
+  , runMetrics
+  , addMetric
+  , metric
+  , sub
+  , desc
+  , label
+  , eitherExitCode
+  , eitherToGauge
+  , goodWhen
+  , enumToGauge
+  , logError
+  ) where
 
 import Control.Monad.Trans.State.Strict
 import Data.ByteString (ByteString)
@@ -59,25 +75,6 @@ addMetric mId mData =
   modify $ \ms ->
     ms { metrics = Data.Map.insert mId mData (metrics ms) }
 
--- | Log error message
---
--- These are appended after all metrics were printed
---
--- Not a standard token but textfile collector ignores it as a comment
--- and we can use it to provide some insight to our scripts.
-logError
-  :: Monad m
-  => ByteString
-  -> StateT MetricState m ()
-logError err =
-  modify $ \ms -> ms { errors = (errors ms) ++ [errComment] }
-  where
-    errComment =
-      Data.ByteString.Char8.unwords
-      [ "# ERROR"
-      , err
-      ]
-
 -- | Create metric with just `name`
 metric
   :: ByteString
@@ -129,3 +126,22 @@ goodWhen False = Gauge 1
 -- | Convert Enum to Gauge, 0 (typically) meaning Ok status
 enumToGauge :: Enum a => a -> Metric
 enumToGauge = Gauge . fromIntegral . fromEnum
+
+-- | Log error message
+--
+-- These are appended after all metrics were printed
+--
+-- Not a standard token but textfile collector ignores it as a comment
+-- and we can use it to provide some insight to our scripts.
+logError
+  :: Monad m
+  => ByteString
+  -> StateT MetricState m ()
+logError err =
+  modify $ \ms -> ms { errors = (errors ms) ++ [errComment] }
+  where
+    errComment =
+      Data.ByteString.Char8.unwords
+      [ "# ERROR"
+      , err
+      ]

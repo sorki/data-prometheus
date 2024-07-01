@@ -1,4 +1,7 @@
-module Data.Prometheus.Types where
+module Data.Prometheus.Types
+  ( MetricId(..)
+  , Metric(..)
+  ) where
 
 import Data.ByteString (ByteString)
 import Data.Map (Map)

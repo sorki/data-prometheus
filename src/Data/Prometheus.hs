@@ -5,19 +5,22 @@ module Data.Prometheus
   , hasLabel
   , byLabel
   , byLabel'
-  , module T
+  , module Data.Prometheus.Monad
+  , module Data.Prometheus.Parse
+  , module Data.Prometheus.Pretty
+  , module Data.Prometheus.Types
   ) where
 
 import Data.ByteString (ByteString)
 import Data.Map (Map)
-import Data.Prometheus.Monad  as T
-import Data.Prometheus.Parse  as T
-import Data.Prometheus.Pretty as T
-import Data.Prometheus.Types  as T
 import Data.Attoparsec.ByteString.Char8
 
 import qualified Data.ByteString.Char8
 import qualified Data.Map
+import Data.Prometheus.Monad
+import Data.Prometheus.Parse
+import Data.Prometheus.Pretty
+import Data.Prometheus.Types
 
 -- | Parse Prometheus metrics from ByteString
 parseProm
