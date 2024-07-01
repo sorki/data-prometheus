@@ -1,11 +1,8 @@
-data-prometheus
-===============
+# data-prometheus
 
-Prometheus metrics parser, pretty printer and filtering utilities for querying `node_exporter` style
-exporters.
+Pure Prometheus metrics parser and builder.
 
-Usage
------
+## Usage
 
 ### Parsing metrics
 
