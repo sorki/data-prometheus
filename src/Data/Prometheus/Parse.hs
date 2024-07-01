@@ -28,7 +28,7 @@ parseMetric = do
     "summary" -> parseSummary
     x -> fail $ show x
 
-  return $ map (\(labels, metric) -> (MetricId name help labels, metric)) lm
+  pure $ map (\(labels, metric) -> (MetricId name help labels, metric)) lm
 
 -- name, help, textual type
 parseMeta :: Parser (ByteString, ByteString, ByteString)
@@ -43,7 +43,7 @@ parseMeta = do
   _ <- space
   typ <- word
   endOfLine
-  return (name, help, typ)
+  pure (name, help, typ)
   where
     eol :: Parser ByteString
     eol = takeWhile (/= '\n')
@@ -62,7 +62,7 @@ parseSummary = do
   qs <- Data.Map.fromList <$> parseQuantiles `sepBy` endOfLine <?> "quantiles"
   (_, lsum) <- labelsValue double
   (_, lcnt) <- labelsValue double
-  return $ [(mempty, Summary qs lsum lcnt)]
+  pure $ [(mempty, Summary qs lsum lcnt)]
 
 parseQuantiles :: Parser (Double, Double)
 parseQuantiles = do
@@ -70,14 +70,14 @@ parseQuantiles = do
   q <- "{quantile=\"" *> double <* "\"}"
   _ <- space
   val <- double
-  return (q, val)
+  pure (q, val)
 
 parseHistogram :: Parser [(Map ByteString ByteString, Metric)]
 parseHistogram = do
   qs <- Data.Map.fromList <$> parseHistBuckets `sepBy` endOfLine <?> "quantiles"
   (_, lsum) <- labelsValue double
   (_, lcnt) <- labelsValue double
-  return $ [(mempty, Histogram qs lsum lcnt)]
+  pure $ [(mempty, Histogram qs lsum lcnt)]
 
 parseHistBuckets :: Parser (Double, Double)
 parseHistBuckets = do
@@ -85,7 +85,7 @@ parseHistBuckets = do
   q <- "{le=\"" *> double <* "\"}"
   _ <- space
   val <- double
-  return (q, val)
+  pure (q, val)
 
 labelsValue :: Parser b -> Parser (Map ByteString ByteString, b)
 labelsValue f = do
@@ -94,7 +94,7 @@ labelsValue f = do
   _ <- space
   val <- f
   endOfLine
-  return (ls, val)
+  pure (ls, val)
 
 parseLabels :: Parser (Map ByteString ByteString)
 parseLabels = Data.Map.fromList <$> parseLabel `sepBy1` (char ',')
@@ -104,14 +104,14 @@ parseLabel = do
   l <- takeWhile (/= '=')
   _ <- char '='
   v <- char '"' *> takeWhile (\x -> x /= '"') <* char '"'
-  return (l, v)
+  pure (l, v)
 
 parseError :: Parser ByteString
 parseError = do
   _ <- "# ERROR "
   err <- eol
   endOfLine
-  return err
+  pure err
   where
     eol :: Parser ByteString
     eol = takeWhile (/= '\n')
