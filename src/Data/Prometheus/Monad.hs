@@ -11,7 +11,7 @@ module Data.Prometheus.Monad
   , label
   , eitherExitCode
   , eitherToGauge
-  , goodWhen
+  , boolToGauge
   , enumToGauge
   , logError
   ) where
@@ -103,9 +103,9 @@ eitherToGauge :: Either a b -> Metric
 eitherToGauge = Gauge . fromIntegral . eitherExitCode
 
 -- | Convert Bool to Gauge, 0 meaning True
-goodWhen :: Bool -> Metric
-goodWhen True = Gauge 0
-goodWhen False = Gauge 1
+boolToGauge :: Bool -> Metric
+boolToGauge True = Gauge 0
+boolToGauge False = Gauge 1
 
 -- | Convert Enum to Gauge, 0 (typically) meaning Ok status
 enumToGauge :: Enum a => a -> Metric
