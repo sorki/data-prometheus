@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Data.Prometheus.Monad
   ( MetricState(..)
+  , Metrics
   , MetricsT
   , ToMetrics(..)
-  , execMetrics
+  , execMetricsT
   , addMetric
   , metric
   , sub
@@ -16,6 +17,7 @@ module Data.Prometheus.Monad
   , logError
   ) where
 
+import Control.Monad.Identity (Identity)
 import Control.Monad.Trans.State.Strict
 import Data.Text (Text)
 import Data.Map (Map)
@@ -31,6 +33,8 @@ data MetricState = MetricState
 
 type MetricsT m = StateT MetricState m ()
 
+type Metrics = MetricsT Identity
+
 class ToMetrics a where
   toMetrics
     :: Monad m
@@ -43,11 +47,11 @@ instance ToMetrics a => ToMetrics [a] where
     mapM_ $ toMetrics baseMetricId
 
 -- | Evaluate metrics into `MetricState`
-execMetrics
+execMetricsT
   :: Monad m
   => MetricsT m
   -> m MetricState
-execMetrics = flip execStateT (MetricState mempty mempty)
+execMetricsT = flip execStateT (MetricState mempty mempty)
 
 -- | Add metric with value
 addMetric

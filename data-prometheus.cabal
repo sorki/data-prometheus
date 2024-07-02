@@ -24,6 +24,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , attoparsec
                      , containers
+                     , mtl
                      , text
                      , transformers
   ghc-options:         -Wall

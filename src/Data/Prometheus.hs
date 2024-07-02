@@ -1,6 +1,7 @@
 module Data.Prometheus
   ( parseProm
   , runMetrics
+  , runMetricsT
   , filterMetrics
   , findMetrics
   , hasLabel
@@ -12,6 +13,7 @@ module Data.Prometheus
   , module Data.Prometheus.Types
   ) where
 
+import Control.Monad.Identity (runIdentity)
 import Data.Text (Text)
 import Data.Map (Map)
 import Data.Attoparsec.Text
@@ -31,17 +33,24 @@ parseProm = parseOnly parseMetrics
 
 -- | Evaluate metrics and return pretty-printed output
 -- as expected by textfile collector
-runMetrics
+runMetricsT
   :: Monad m
   => MetricsT m
   -> m Text
-runMetrics x = do
-  ms <- execMetrics x
+runMetricsT x = do
+  ms <- execMetricsT x
   pure
     $ mconcat
         [ prettyMetrics (metrics ms)
         , Data.Text.unlines (errors ms)
         ]
+
+-- | Evaluate metrics and return pretty-printed output
+-- as expected by textfile collector
+runMetrics
+  :: Metrics
+  -> Text
+runMetrics = runIdentity . runMetricsT
 
 -- | Filter metrics where name is prefixed by `pattern`
 filterMetrics :: Text -> Map MetricId a -> Map MetricId a
