@@ -3,13 +3,13 @@ module Data.Prometheus.Types
   , Metric(..)
   ) where
 
-import Data.ByteString (ByteString)
+import Data.Text (Text)
 import Data.Map (Map)
 
 data MetricId = MetricId
-  { metricIdName :: ByteString
-  , metricIdHelp :: ByteString
-  , metricIdLabels :: Map ByteString ByteString }
+  { metricIdName :: Text
+  , metricIdHelp :: Text
+  , metricIdLabels :: Map Text Text }
   deriving (Eq, Ord, Show)
 
 data Metric

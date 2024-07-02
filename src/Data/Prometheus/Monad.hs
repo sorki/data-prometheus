@@ -17,16 +17,16 @@ module Data.Prometheus.Monad
   ) where
 
 import Control.Monad.Trans.State.Strict
-import Data.ByteString (ByteString)
+import Data.Text (Text)
 import Data.Map (Map)
 import qualified Data.Map
-import qualified Data.ByteString.Char8
+import qualified Data.Text
 
 import Data.Prometheus.Types
 
 data MetricState = MetricState
   { metrics :: Map MetricId Metric
-  , errors  :: [ByteString]
+  , errors  :: [Text]
   }
 
 type MetricsT m = StateT MetricState m ()
@@ -61,7 +61,7 @@ addMetric mId mData =
 
 -- | Create metric with just `name`
 metric
-  :: ByteString
+  :: Text
   -> MetricId
 metric mName = MetricId mName mempty mempty
 
@@ -70,7 +70,7 @@ metric mName = MetricId mName mempty mempty
 -- > metric "a" & sub "b"
 -- results in name "a_b"
 sub
-  :: ByteString
+  :: Text
   -> MetricId
   -> MetricId
 sub subName m =
@@ -78,7 +78,7 @@ sub subName m =
 
 -- | Set help text / description of a @MetricId@
 desc
-  :: ByteString
+  :: Text
   -> MetricId
   -> MetricId
 desc h m =
@@ -86,8 +86,8 @@ desc h m =
 
 -- | Add label to MetricId
 label
-  :: ByteString
-  -> ByteString
+  :: Text
+  -> Text
   -> MetricId
   -> MetricId
 label k v m =
@@ -119,13 +119,13 @@ enumToGauge = Gauge . fromIntegral . fromEnum
 -- and we can use it to provide some insight to our scripts.
 logError
   :: Monad m
-  => ByteString
+  => Text
   -> StateT MetricState m ()
 logError err =
   modify $ \ms -> ms { errors = (errors ms) ++ [errComment] }
   where
     errComment =
-      Data.ByteString.Char8.unwords
+      Data.Text.unwords
       [ "# ERROR"
       , err
       ]

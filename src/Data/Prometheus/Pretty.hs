@@ -7,16 +7,16 @@ module Data.Prometheus.Pretty
   , prettyId
   ) where
 
-import Data.ByteString (ByteString)
+import Data.Text (Text)
 import Data.Map (Map)
 import Data.String (IsString)
-import qualified Data.ByteString.Char8
+import qualified Data.Text
 import qualified Data.Map
 
 import Data.Prometheus.Types
 import Data.Prometheus.Monad
 
-prettyMetrics :: Map MetricId Metric -> ByteString
+prettyMetrics :: Map MetricId Metric -> Text
 prettyMetrics =
     mconcat
   . Data.Map.elems
@@ -33,9 +33,9 @@ prettyMetrics =
     helpTypeOnce _prevName mid@MetricId{..} x | otherwise =
       (metricIdName, prettyMetricShort mid x <> "\n")
 
-prettyMetric :: MetricId -> Metric -> ByteString
+prettyMetric :: MetricId -> Metric -> Text
 prettyMetric mId mData =
-  Data.ByteString.Char8.unlines
+  Data.Text.unlines
     [ prettyHelp mId
     , prettyType mId mData
     , prettyMetricShort mId mData
@@ -44,17 +44,17 @@ prettyMetric mId mData =
 prettyMetricShort
   :: MetricId
   -> Metric
-  -> ByteString
+  -> Text
 prettyMetricShort mId mData =
   case mData of
     Counter x -> simple mId x
     Gauge x -> simple mId x
     Summary{..} ->
-      Data.ByteString.Char8.unlines
+      Data.Text.unlines
       $ [ simple
             (label
               "quantile"
-              (Data.ByteString.Char8.pack $ show k)
+              (Data.Text.pack $ show k)
               mId
             )
             v
@@ -65,11 +65,11 @@ prettyMetricShort mId mData =
         , simple (sub "count" mId) sumCount
         ]
     Histogram{..} ->
-      Data.ByteString.Char8.unlines
+      Data.Text.unlines
       $ [ simple
             (label
               "le"
-              (Data.ByteString.Char8.pack $ show k)
+              (Data.Text.pack $ show k)
               (sub "bucket" mId)
             )
             v
@@ -82,16 +82,16 @@ prettyMetricShort mId mData =
 
   where
     simple i val =
-      Data.ByteString.Char8.unwords
+      Data.Text.unwords
         [ prettyId i
-        , Data.ByteString.Char8.pack $ show val
+        , Data.Text.pack $ show val
         ]
 
 prettyHelp
   :: MetricId
-  -> ByteString
+  -> Text
 prettyHelp MetricId{..} =
-  Data.ByteString.Char8.unwords
+  Data.Text.unwords
     [ "# HELP"
     , metricIdName
     , metricIdHelp
@@ -100,9 +100,9 @@ prettyHelp MetricId{..} =
 prettyType
   :: MetricId
   -> Metric
-  -> ByteString
+  -> Text
 prettyType mId x =
-  Data.ByteString.Char8.unwords
+  Data.Text.unwords
   [ "# TYPE"
   , metricIdName mId
   , toTypeStr x
@@ -119,7 +119,7 @@ toTypeStr (Histogram{}) = "histogram"
 
 prettyId
   :: MetricId
-  -> ByteString
+  -> Text
 prettyId MetricId{..} =
   mconcat
     [ metricIdName
@@ -127,13 +127,13 @@ prettyId MetricId{..} =
     ]
 
 prettyLabels
-  :: Map ByteString ByteString
-  -> ByteString
+  :: Map Text Text
+  -> Text
 prettyLabels labels | Data.Map.null labels = mempty
 prettyLabels labels | otherwise =
   mconcat
     [ "{"
-    , Data.ByteString.Char8.intercalate ","
+    , Data.Text.intercalate ","
         $ Data.Map.elems
         $ Data.Map.mapWithKey
             (\k v -> mconcat [k, "=\"", v, "\""]) 

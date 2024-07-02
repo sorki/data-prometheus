@@ -6,8 +6,8 @@ module Data.Prometheus.Parse
 import Control.Applicative
 
 import Prelude hiding (takeWhile)
-import Data.Attoparsec.ByteString.Char8
-import Data.ByteString (ByteString)
+import Data.Attoparsec.Text
+import Data.Text (Text)
 import Data.Map (Map)
 import qualified Data.Map
 
@@ -31,7 +31,7 @@ parseMetric = do
   pure $ map (\(labels, metric) -> (MetricId name help labels, metric)) lm
 
 -- name, help, textual type
-parseMeta :: Parser (ByteString, ByteString, ByteString)
+parseMeta :: Parser (Text, Text, Text)
 parseMeta = do
   _ <- "# HELP "
   name <- word
@@ -45,19 +45,19 @@ parseMeta = do
   endOfLine
   pure (name, help, typ)
   where
-    eol :: Parser ByteString
+    eol :: Parser Text
     eol = takeWhile (/= '\n')
 
-    word :: Parser ByteString
+    word :: Parser Text
     word  = takeWhile1 (\x -> x /=' ' && x /= '\n')
 
-parseGauges :: Parser [(Map ByteString ByteString, Metric)]
+parseGauges :: Parser [(Map Text Text, Metric)]
 parseGauges = many1 (labelsValue (Gauge <$> double))
 
-parseCounters :: Parser [(Map ByteString ByteString, Metric)]
+parseCounters :: Parser [(Map Text Text, Metric)]
 parseCounters = many1 (labelsValue (Counter <$> double))
 
-parseSummary :: Parser [(Map ByteString ByteString, Metric)]
+parseSummary :: Parser [(Map Text Text, Metric)]
 parseSummary = do
   qs <- Data.Map.fromList <$> parseQuantiles `sepBy` endOfLine <?> "quantiles"
   (_, lsum) <- labelsValue double
@@ -72,7 +72,7 @@ parseQuantiles = do
   val <- double
   pure (q, val)
 
-parseHistogram :: Parser [(Map ByteString ByteString, Metric)]
+parseHistogram :: Parser [(Map Text Text, Metric)]
 parseHistogram = do
   qs <- Data.Map.fromList <$> parseHistBuckets `sepBy` endOfLine <?> "quantiles"
   (_, lsum) <- labelsValue double
@@ -87,7 +87,7 @@ parseHistBuckets = do
   val <- double
   pure (q, val)
 
-labelsValue :: Parser b -> Parser (Map ByteString ByteString, b)
+labelsValue :: Parser b -> Parser (Map Text Text, b)
 labelsValue f = do
   _ <- takeWhile1 (\x -> x /= '{' && x /= ' ')
   ls <- option mempty (char '{' *> parseLabels <* char '}')
@@ -96,22 +96,22 @@ labelsValue f = do
   endOfLine
   pure (ls, val)
 
-parseLabels :: Parser (Map ByteString ByteString)
+parseLabels :: Parser (Map Text Text)
 parseLabels = Data.Map.fromList <$> parseLabel `sepBy1` (char ',')
 
-parseLabel :: Parser (ByteString, ByteString)
+parseLabel :: Parser (Text, Text)
 parseLabel = do
   l <- takeWhile (/= '=')
   _ <- char '='
   v <- char '"' *> takeWhile (\x -> x /= '"') <* char '"'
   pure (l, v)
 
-parseError :: Parser ByteString
+parseError :: Parser Text
 parseError = do
   _ <- "# ERROR "
   err <- eol
   endOfLine
   pure err
   where
-    eol :: Parser ByteString
+    eol :: Parser Text
     eol = takeWhile (/= '\n')
