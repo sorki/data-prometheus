@@ -35,10 +35,11 @@ parseProm = parseOnly parseMetrics
 -- as expected by textfile collector
 runMetricsT
   :: Monad m
-  => MetricsT m
+  => MetricId
+  -> MetricsT m
   -> m Text
-runMetricsT x = do
-  ms <- execMetricsT x
+runMetricsT rootMetric x = do
+  ms <- execMetricsT rootMetric x
   pure
     $ mconcat
         [ prettyMetrics (metrics ms)
@@ -48,9 +49,12 @@ runMetricsT x = do
 -- | Evaluate metrics and return pretty-printed output
 -- as expected by textfile collector
 runMetrics
-  :: Metrics
+  :: MetricId
+  -> Metrics
   -> Text
-runMetrics = runIdentity . runMetricsT
+runMetrics rootMetric =
+    runIdentity
+  . runMetricsT rootMetric
 
 -- | Filter metrics where name is prefixed by `pattern`
 filterMetrics :: Text -> Map MetricId a -> Map MetricId a

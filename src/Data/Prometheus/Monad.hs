@@ -5,7 +5,10 @@ module Data.Prometheus.Monad
   , MetricsT
   , ToMetrics(..)
   , execMetricsT
+  , addMetric'
   , addMetric
+  , subMetrics
+  , labeledMetrics
   , metric
   , sub
   , desc
@@ -43,30 +46,48 @@ type Metrics = MetricsT Identity
 class ToMetrics a where
   toMetrics
     :: Monad m
-    => MetricId
-    -> a
+    => a
     -> MetricsT m
 
 instance ToMetrics a => ToMetrics [a] where
-  toMetrics baseMetricId =
-    mapM_ $ toMetrics baseMetricId
+  toMetrics xs =
+    mapM_
+      (\(k, v) ->
+      labeledMetrics
+        "id"
+        (Data.Text.pack $ show k)
+        $ toMetrics v
+      )
+      (zip [(0 :: Int)..] xs)
 
 -- | Evaluate metrics into `MetricState`
 execMetricsT
   :: Monad m
-  => MetricsT m
+  => MetricId
+  -> MetricsT m
   -> m MetricState
-execMetricsT = flip execStateT (MetricState (metric "tmp") mempty mempty)
+execMetricsT rootMetric =
+  flip
+    execStateT
+    (MetricState rootMetric mempty mempty)
 
 -- | Add metric with value
-addMetric
+addMetric'
   :: Monad m
-  => MetricId
-  -> Metric
+  => (MetricId -> MetricId) -- ^ Function to change the current MetricId
+  -> Metric -- ^ Metric to add
   -> MetricsT m
-addMetric mId mData =
+addMetric' f mData = do
+  mId <- f <$> gets baseMetric
   modify $ \ms ->
     ms { metrics = Data.Map.insert mId mData (metrics ms) }
+
+addMetric
+  :: Monad m
+  => Text -- ^ Suffix (sub metric to add)
+  -> Metric -- ^ Metric to add
+  -> MetricsT m
+addMetric subName = addMetric' (sub subName)
 
 subMetrics
   :: Monad m
@@ -77,6 +98,20 @@ subMetrics subName act = do
   old <- gets baseMetric
   modify $ \ms ->
     ms { baseMetric = sub subName $ baseMetric ms }
+  act
+  modify $ \ms ->
+    ms { baseMetric = old }
+
+labeledMetrics
+  :: Monad m
+  => Text -- ^ Label name
+  -> Text -- ^ Label value
+  -> MetricsT m
+  -> MetricsT m
+labeledMetrics labelName labelValue act = do
+  old <- gets baseMetric
+  modify $ \ms ->
+    ms { baseMetric = label labelName labelValue $ baseMetric ms }
   act
   modify $ \ms ->
     ms { baseMetric = old }
