@@ -31,7 +31,8 @@ import qualified GHC.Float
 import Data.Prometheus.Types
 
 data MetricState = MetricState
-  { metrics :: Map MetricId Metric
+  { baseMetric :: MetricId
+  , metrics :: Map MetricId Metric
   , errors  :: [Text]
   }
 
@@ -55,7 +56,7 @@ execMetricsT
   :: Monad m
   => MetricsT m
   -> m MetricState
-execMetricsT = flip execStateT (MetricState mempty mempty)
+execMetricsT = flip execStateT (MetricState (metric "tmp") mempty mempty)
 
 -- | Add metric with value
 addMetric
@@ -66,6 +67,19 @@ addMetric
 addMetric mId mData =
   modify $ \ms ->
     ms { metrics = Data.Map.insert mId mData (metrics ms) }
+
+subMetrics
+  :: Monad m
+  => Text
+  -> MetricsT m
+  -> MetricsT m
+subMetrics subName act = do
+  old <- gets baseMetric
+  modify $ \ms ->
+    ms { baseMetric = sub subName $ baseMetric ms }
+  act
+  modify $ \ms ->
+    ms { baseMetric = old }
 
 -- | Create metric with just `name`
 metric
