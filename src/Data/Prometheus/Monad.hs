@@ -106,10 +106,10 @@ eitherExitCode (Left _) = 1
 eitherToGauge :: Either a b -> Metric
 eitherToGauge = Gauge . fromIntegral . eitherExitCode
 
--- | Convert Bool to Gauge, 0 meaning True
+-- | Convert Bool to Gauge, 0 meaning False
 boolToGauge :: Bool -> Metric
-boolToGauge True = Gauge 0
-boolToGauge False = Gauge 1
+boolToGauge False = mkGauge 0
+boolToGauge True = mkGauge 1
 
 -- | Convert Enum to Gauge, 0 (typically) meaning Ok status
 enumToGauge :: Enum a => a -> Metric
