@@ -16,6 +16,7 @@ module Data.Prometheus.Monad
   , eitherToGauge
   , boolToGauge
   , enumToGauge
+  , floatToGauge
   , logError
   ) where
 
@@ -25,6 +26,7 @@ import Data.Text (Text)
 import Data.Map (Map)
 import qualified Data.Map
 import qualified Data.Text
+import qualified GHC.Float
 
 import Data.Prometheus.Types
 
@@ -128,6 +130,12 @@ boolToGauge True = mkGauge 1
 -- | Convert Enum to Gauge, 0 (typically) meaning Ok status
 enumToGauge :: Enum a => a -> Metric
 enumToGauge = mkGauge . fromIntegral . fromEnum
+
+-- | Convert @Float@ to Gauge
+floatToGauge
+  :: Float
+  -> Metric
+floatToGauge = mkGauge . GHC.Float.float2Double
 
 -- | Log error message
 --
