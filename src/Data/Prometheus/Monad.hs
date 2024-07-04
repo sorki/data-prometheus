@@ -10,6 +10,8 @@ module Data.Prometheus.Monad
   , sub
   , desc
   , label
+  , mkGauge
+  , mkCounter
   , eitherExitCode
   , eitherToGauge
   , boolToGauge
@@ -97,6 +99,18 @@ label
 label k v m =
   m { metricIdLabels = Data.Map.insert k v (metricIdLabels m) }
 
+-- | Create @Gauge@ metric
+mkGauge
+  :: Double
+  -> Metric
+mkGauge = Gauge
+
+-- | Create @Counter@ metric
+mkCounter
+  :: Double
+  -> Metric
+mkCounter = Counter
+
 -- | Right is exitcode 0, Left non-zero
 eitherExitCode :: Either a b -> Integer
 eitherExitCode (Right _) = 0
@@ -104,7 +118,7 @@ eitherExitCode (Left _) = 1
 
 -- | Convert Either to Gauge, 0 meaning Right
 eitherToGauge :: Either a b -> Metric
-eitherToGauge = Gauge . fromIntegral . eitherExitCode
+eitherToGauge = mkGauge . fromIntegral . eitherExitCode
 
 -- | Convert Bool to Gauge, 0 meaning False
 boolToGauge :: Bool -> Metric
@@ -113,7 +127,7 @@ boolToGauge True = mkGauge 1
 
 -- | Convert Enum to Gauge, 0 (typically) meaning Ok status
 enumToGauge :: Enum a => a -> Metric
-enumToGauge = Gauge . fromIntegral . fromEnum
+enumToGauge = mkGauge . fromIntegral . fromEnum
 
 -- | Log error message
 --
