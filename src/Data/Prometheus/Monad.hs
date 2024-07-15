@@ -53,10 +53,10 @@ instance ToMetrics a => ToMetrics [a] where
   toMetrics xs =
     mapM_
       (\(k, v) ->
-      labeledMetrics
-        "id"
-        (Data.Text.pack $ show k)
-        $ toMetrics v
+        labeledMetrics
+          "id"
+          (Data.Text.pack $ show k)
+          $ toMetrics v
       )
       (zip [(0 :: Int)..] xs)
 
