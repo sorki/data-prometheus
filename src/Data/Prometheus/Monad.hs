@@ -74,21 +74,23 @@ execMetricsT rootMetric =
 -- | Add metric with value
 addMetric'
   :: Monad m
-  => (MetricId -> MetricId) -- ^ Function to change the current MetricId
-  -> Metric -- ^ Metric to add
+  => (MetricId -> MetricId) -- ^ Function to change the current @MetricId@
+  -> Metric -- ^ @Metric@ to add
   -> MetricsT m
 addMetric' f mData = do
   mId <- f <$> gets baseMetric
   modify $ \ms ->
     ms { metrics = Data.Map.insert mId mData (metrics ms) }
 
+-- | Add metric with value
 addMetric
   :: Monad m
   => Text -- ^ Suffix (sub metric to add)
-  -> Metric -- ^ Metric to add
+  -> Metric -- ^ @Metric@ to add
   -> MetricsT m
 addMetric subName = addMetric' (sub subName)
 
+-- | Combinator to create sub-metrics
 subMetrics
   :: Monad m
   => Text
@@ -102,6 +104,7 @@ subMetrics subName act = do
   modify $ \ms ->
     ms { baseMetric = old }
 
+-- | Combinator to create labeled metrics
 labeledMetrics
   :: Monad m
   => Text -- ^ Label name
